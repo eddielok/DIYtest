@@ -1,0 +1,13 @@
+{
+  "name": "screen-ai-overlay",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "electron": "^28.0.0",
+    "tesseract.js": "^7.0.0"
+  }
+}

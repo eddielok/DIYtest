@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      background: rgba(10, 10, 20, 0.30);
+      color: #e8e8f0;
+      border-radius: 14px;
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      -webkit-app-region: drag;
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .titlebar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      flex-shrink: 0;
+    }
+
+    .title {
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.5);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .controls {
+      display: flex;
+      gap: 8px;
+      -webkit-app-region: no-drag;
+    }
+
+    button {
+      background: rgba(255,255,255,0.08);
+      border: none;
+      color: rgba(255,255,255,0.6);
+      border-radius: 6px;
+      padding: 3px 10px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    button:hover { background: rgba(255,255,255,0.16); color: #fff; }
+
+    .send-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      flex-shrink: 0;
+      -webkit-app-region: no-drag;
+    }
+    .send-bar input {
+      flex: 1;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 5px;
+      color: #e8e8f0;
+      font-size: 11px;
+      padding: 3px 8px;
+      outline: none;
+    }
+    .send-bar input::placeholder { color: rgba(255,255,255,0.3); }
+    #send-btn { background: rgba(99,102,241,0.3); color: rgba(200,200,255,0.9); }
+    #send-btn:hover { background: rgba(99,102,241,0.55); color: #fff; }
+    #send-btn.sending { opacity: 0.5; cursor: not-allowed; }
+    #send-status { font-size: 10px; color: rgba(255,255,255,0.35); white-space: nowrap; }
+
+    .remote-tag {
+      display: inline-block;
+      background: rgba(99,102,241,0.25);
+      color: #a5b4fc;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      border-radius: 4px;
+      padding: 1px 6px;
+      margin-bottom: 6px;
+    }
+
+    .status-bar {
+      padding: 6px 14px;
+      font-size: 10px;
+      color: rgba(255,255,255,0.35);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #555;
+      transition: background 0.3s;
+    }
+    .dot.scanning { background: #f59e0b; animation: pulse 0.8s infinite; }
+    .dot.ocr     { background: #06b6d4; animation: pulse 0.6s infinite; }
+    .dot.thinking { background: #6366f1; animation: pulse 0.5s infinite; }
+    .dot.ready    { background: #22c55e; }
+    .dot.error    { background: #ef4444; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .content {
+      flex: 1;
+      padding: 10px 14px 14px;
+      overflow-y: auto;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #d4d4e8;
+    }
+
+    .content::-webkit-scrollbar { width: 6px; }
+    .content::-webkit-scrollbar-track { background: rgba(255,255,255,0.04); border-radius: 3px; }
+    .content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.25); border-radius: 3px; }
+    .content::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.45); }
+
+    .placeholder {
+      color: rgba(255,255,255,0.2);
+      font-style: italic;
+      font-size: 12px;
+    }
+
+    #countdown {
+      font-variant-numeric: tabular-nums;
+    }
+  </style>
+</head>
+<body>
+  <div class="titlebar">
+    <span class="title">AI Overlay</span>
+    <div class="controls">
+      <button onclick="window.api.scanAll()">Scan Now</button>
+      <button onclick="window.api.scanNow()">Scan Filter</button>
+      <button id="pause-btn" onclick="window.api.togglePause()">Pause</button>
+      <button onclick="window.api.close()">✕</button>
+    </div>
+  </div>
+
+  <div class="send-bar">
+    <input id="target-ip" type="text" placeholder="Target Mac IP (e.g. 192.168.1.x)" />
+    <button id="send-btn" onclick="sendScreen()">Send ↗</button>
+    <span id="send-status"></span>
+  </div>
+
+  <div class="status-bar">
+    <div class="dot" id="dot"></div>
+    <span id="status-text">Waiting...</span>
+    <span style="margin-left:auto" id="countdown"></span>
+  </div>
+  <div id="category-bar" style="display:none; padding: 3px 14px; font-size: 10px; font-weight: 600; color: #6366f1; letter-spacing: 0.4px; border-bottom: 1px solid rgba(255,255,255,0.06);"></div>
+
+  <div class="content" id="answer">
+    <span class="placeholder">Scanning screen in a moment...</span>
+  </div>
+
+  <script>
+    const sendBtn = document.getElementById('send-btn');
+    const sendStatus = document.getElementById('send-status');
+    const targetIPInput = document.getElementById('target-ip');
+
+    async function sendScreen() {
+      const ip = targetIPInput.value.trim();
+      if (!ip) { sendStatus.textContent = 'Enter an IP first'; return; }
+      sendBtn.classList.add('sending');
+      sendBtn.disabled = true;
+      sendStatus.textContent = 'Sending...';
+      const result = await window.api.sendScreen(ip);
+      sendBtn.classList.remove('sending');
+      sendBtn.disabled = false;
+      if (result.ok) {
+        sendStatus.textContent = `Sent to ${result.ip}`;
+        setTimeout(() => { sendStatus.textContent = ''; }, 3000);
+      } else {
+        sendStatus.textContent = `Error: ${result.error}`;
+      }
+    }
+
+    const dot = document.getElementById('dot');
+    const statusText = document.getElementById('status-text');
+    const answerEl = document.getElementById('answer');
+    const countdownEl = document.getElementById('countdown');
+
+    let nextScanAt = Date.now() + 1500;
+
+    function updateCountdown() {
+      const remaining = Math.max(0, Math.ceil((nextScanAt - Date.now()) / 1000));
+      countdownEl.textContent = remaining > 0 ? `next in ${remaining}s` : '';
+    }
+    setInterval(updateCountdown, 500);
+
+    window.api.onStatus((s) => {
+      dot.className = 'dot ' + s;
+      if (s === 'scanning') statusText.textContent = 'Capturing screen...';
+      else if (s === 'ocr') statusText.textContent = 'Reading text (OCR)...';
+      else if (s === 'thinking') statusText.textContent = 'Analyzing with DeepSeek...';
+      else if (s === 'error') statusText.textContent = 'Error capturing screen';
+    });
+
+    const categoryBar = document.getElementById('category-bar');
+
+    window.api.onCategory((name) => {
+      categoryBar.textContent = name;
+      categoryBar.style.display = 'block';
+    });
+
+    const pauseBtn = document.getElementById('pause-btn');
+    window.api.onPaused((paused) => {
+      pauseBtn.textContent = paused ? 'Resume' : 'Pause';
+      pauseBtn.style.background = paused ? 'rgba(239,68,68,0.25)' : '';
+      if (paused) {
+        dot.className = 'dot';
+        statusText.textContent = 'Paused';
+        countdownEl.textContent = '';
+      }
+    });
+
+    window.api.onAnswer((text) => {
+      answerEl.textContent = text;
+      dot.className = 'dot ready';
+      statusText.textContent = 'Ready';
+      nextScanAt = Date.now() + 8000;
+      if (text === 'No relevant test question detected on screen.') {
+        categoryBar.style.display = 'none';
+      }
+    });
+
+    window.api.onRemoteAnalysis((text) => {
+      categoryBar.textContent = 'Claude (Remote Mac)';
+      categoryBar.style.display = 'block';
+      answerEl.innerHTML = '<span class="remote-tag">Claude Vision</span><br>' + text.replace(/\n/g, '<br>');
+      dot.className = 'dot ready';
+      statusText.textContent = 'Remote analysis received';
+    });
+  </script>
+</body>
+</html>
