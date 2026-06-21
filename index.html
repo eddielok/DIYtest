@@ -122,10 +122,10 @@
 
     .content {
       flex: 1;
-      padding: 10px 14px 14px;
+      padding: 8px 14px 10px;
       overflow-y: auto;
-      font-size: 13px;
-      line-height: 1.6;
+      font-size: 11px;
+      line-height: 1.5;
       color: #d4d4e8;
     }
 
@@ -137,7 +137,7 @@
     .placeholder {
       color: rgba(255,255,255,0.2);
       font-style: italic;
-      font-size: 12px;
+      font-size: 10px;
     }
 
     #countdown {
@@ -157,7 +157,7 @@
   </div>
 
   <div class="send-bar">
-    <input id="target-ip" type="text" placeholder="Target Mac IP (e.g. 192.168.1.x)" />
+    <input id="target-ip" type="text" placeholder="Target Mac IP" value="10.140.85.198" />
     <button id="send-btn" onclick="sendScreen()">Send ↗</button>
     <span id="send-status"></span>
   </div>

@@ -162,7 +162,7 @@ function createWindow() {
 
   mainWindow = new BrowserWindow({
     width: 560,
-    height: 560,
+    height: 380,
     x: width - 440,
     y: 20,
     transparent: true,
@@ -392,6 +392,11 @@ function startResultServer() {
 ipcMain.handle("send-screen", async (_, ip) => {
   if (ip) targetMacIP = ip.trim();
   if (!targetMacIP) return { error: "No target IP set." };
+
+  // Stop regular OCR scan
+  if (scanInterval) { clearInterval(scanInterval); scanInterval = null; }
+  isPaused = true;
+  if (mainWindow) mainWindow.webContents.send("paused", true);
 
   startResultServer();
 
