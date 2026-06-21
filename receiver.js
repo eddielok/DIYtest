@@ -114,7 +114,9 @@ const server = http.createServer((req, res) => {
       const analysis = await analyzeWithClaude(filename);
 
       // Close Preview once analysis is done
-      execFile("osascript", ["-e", 'tell application "Preview" to close (every window whose name contains "screen-")']);
+      execFile("osascript", ["-e", 'tell application "Preview" to close (every window whose name contains "screen-") saving no'], (err) => {
+        if (err) console.warn("Could not close Preview:", err.message);
+      });
 
       console.log("\n--- Claude's Analysis ---");
       console.log(analysis);
