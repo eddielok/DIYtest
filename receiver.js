@@ -69,12 +69,18 @@ function postResultBack(senderIP, analysis) {
         path: "/result",
         method: "POST",
         headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) },
+        timeout: 5000,
       },
-      (res) => { res.resume(); res.on("end", resolve); }
+      (res) => { res.resume(); res.on("end", () => resolve(true)); }
     );
     req.on("error", (e) => {
       console.warn(`Could not send result back to ${senderIP}: ${e.message}`);
-      resolve();
+      resolve(false);
+    });
+    req.on("timeout", () => {
+      console.warn(`Timeout sending result to ${senderIP}`);
+      req.destroy();
+      resolve(false);
     });
     req.write(body);
     req.end();
@@ -116,12 +122,19 @@ const server = http.createServer((req, res) => {
 
       fs.writeFileSync(filename.replace(".png", ".txt"), analysis);
 
-      // Send result back to sender overlay
+      // Send result back to sender overlay — try each IP up to 3 times
       if (senderIPs?.length) {
+        let delivered = false;
         for (const ip of senderIPs) {
-          console.log(`Sending result back to ${ip}:9998...`);
-          await postResultBack(ip, analysis);
+          for (let attempt = 1; attempt <= 3 && !delivered; attempt++) {
+            console.log(`Sending result back to ${ip}:9998 (attempt ${attempt})...`);
+            const sent = await postResultBack(ip, analysis);
+            if (sent) { console.log(`Result delivered to ${ip}`); delivered = true; }
+            else if (attempt < 3) await new Promise(r => setTimeout(r, 2000));
+          }
+          if (delivered) break;
         }
+        if (!delivered) console.error("Failed to deliver result to any sender IP.");
       }
     } catch (err) {
       console.error("Error:", err.message);

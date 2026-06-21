@@ -171,14 +171,15 @@ function createWindow() {
     resizable: true,
     skipTaskbar: true,
     hasShadow: false,
+    type: "panel",
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
     },
   });
 
-  mainWindow.setAlwaysOnTop(true, "screen-saver");
   mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  mainWindow.setAlwaysOnTop(true, "screen-saver");
   mainWindow.loadFile("index.html");
 }
 
@@ -391,7 +392,16 @@ function startResultServer() {
       } catch {}
     });
   });
-  resultServer.listen(9998, "0.0.0.0");
+  resultServer.on("error", (err) => {
+    console.error(`Result server error: ${err.message}`);
+    if (err.code === "EADDRINUSE") {
+      console.error("Port 9998 already in use — result delivery will fail.");
+    }
+    resultServer = null;
+  });
+  resultServer.listen(9998, "0.0.0.0", () => {
+    console.log("Result server listening on port 9998");
+  });
 }
 
 ipcMain.handle("send-screen", async (_, ip) => {
