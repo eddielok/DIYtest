@@ -324,6 +324,10 @@ ipcMain.on("scan-now", () => runScan({ filtered: true }));
 ipcMain.on("scan-all", () => runScan({ filtered: false }));
 ipcMain.on("toggle-pause", () => {
   isPaused = !isPaused;
+  if (!isPaused) {
+    scanStopped = false;
+    startInterval();
+  }
   if (mainWindow) mainWindow.webContents.send("paused", isPaused);
 });
 
