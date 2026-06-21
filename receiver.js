@@ -101,11 +101,14 @@ const server = http.createServer((req, res) => {
       console.log(`\n[${new Date().toLocaleTimeString()}] Screenshot saved → ${filename}`);
 
       // Open in Preview
-      execFile("open", [filename]);
+      execFile("open", ["-a", "Preview", filename]);
 
       // Analyze with Claude CLI
       console.log("Sending to Claude for analysis...");
       const analysis = await analyzeWithClaude(filename);
+
+      // Close Preview once analysis is done
+      execFile("osascript", ["-e", 'tell application "Preview" to close (every window whose name contains "screen-")']);
 
       console.log("\n--- Claude's Analysis ---");
       console.log(analysis);
