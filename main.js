@@ -178,6 +178,7 @@ function createWindow() {
   });
 
   mainWindow.setAlwaysOnTop(true, "screen-saver");
+  mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   mainWindow.loadFile("index.html");
 }
 
