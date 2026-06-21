@@ -161,7 +161,7 @@ function createWindow() {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize;
 
   mainWindow = new BrowserWindow({
-    width: 560,
+    width: 500,
     height: 300,
     x: width - 440,
     y: 500,
@@ -285,7 +285,8 @@ async function runScan({ filtered }) {
     const answer = await callDeepSeek(screenText, prompt);
     if (!scanStopped) mainWindow.webContents.send("answer", answer);
   } catch (err) {
-    if (!scanStopped) mainWindow.webContents.send("answer", `Error: ${err.message}`);
+    if (!scanStopped)
+      mainWindow.webContents.send("answer", `Error: ${err.message}`);
   }
 }
 
