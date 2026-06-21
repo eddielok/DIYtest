@@ -260,6 +260,11 @@
       answerEl.focus();
     });
 
+    answerEl.addEventListener('wheel', (e) => {
+      answerEl.scrollTop += e.deltaY;
+      e.preventDefault();
+    }, { passive: false });
+
     document.addEventListener('keydown', (e) => {
       if (document.activeElement === targetIPInput) return;
       const step = 60;
