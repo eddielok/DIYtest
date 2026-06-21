@@ -162,9 +162,9 @@ function createWindow() {
 
   mainWindow = new BrowserWindow({
     width: 560,
-    height: 380,
+    height: 300,
     x: width - 440,
-    y: 20,
+    y: 500,
     transparent: true,
     frame: false,
     alwaysOnTop: true,
@@ -244,18 +244,19 @@ const UNFILTERED_PROMPT =
   "You are a helpful assistant. The following is text extracted (via OCR) from a screenshot. Answer any visible questions or summarize key content. Provide ONLY the answer — do NOT restate or repeat the question. Be concise.\n\nScreen text:\n";
 
 async function runScan({ filtered }) {
-  if (!mainWindow) return;
+  if (!mainWindow || scanStopped) return;
   mainWindow.webContents.send("status", "scanning");
 
   try {
     const imageData = await captureScreen();
-    if (!imageData) {
-      mainWindow.webContents.send("status", "error");
+    if (scanStopped || !imageData) {
+      if (!scanStopped) mainWindow.webContents.send("status", "error");
       return;
     }
 
     mainWindow.webContents.send("status", "ocr");
     const screenText = await ocrImage(imageData);
+    if (scanStopped) return;
     if (!screenText) {
       mainWindow.webContents.send("answer", "No text detected on screen.");
       return;
@@ -279,11 +280,12 @@ async function runScan({ filtered }) {
       prompt = UNFILTERED_PROMPT;
     }
 
+    if (scanStopped) return;
     mainWindow.webContents.send("status", "thinking");
     const answer = await callDeepSeek(screenText, prompt);
-    mainWindow.webContents.send("answer", answer);
+    if (!scanStopped) mainWindow.webContents.send("answer", answer);
   } catch (err) {
-    mainWindow.webContents.send("answer", `Error: ${err.message}`);
+    if (!scanStopped) mainWindow.webContents.send("answer", `Error: ${err.message}`);
   }
 }
 
@@ -291,6 +293,7 @@ const scanAndAnalyze = () => runScan({ filtered: true });
 
 let scanInterval = null;
 let isPaused = false;
+let scanStopped = false;
 
 function startInterval() {
   if (scanInterval) clearInterval(scanInterval);
@@ -393,8 +396,12 @@ ipcMain.handle("send-screen", async (_, ip) => {
   if (ip) targetMacIP = ip.trim();
   if (!targetMacIP) return { error: "No target IP set." };
 
-  // Stop regular OCR scan
-  if (scanInterval) { clearInterval(scanInterval); scanInterval = null; }
+  // Stop regular OCR scan immediately (including any in-progress scan)
+  scanStopped = true;
+  if (scanInterval) {
+    clearInterval(scanInterval);
+    scanInterval = null;
+  }
   isPaused = true;
   if (mainWindow) mainWindow.webContents.send("paused", true);
 
