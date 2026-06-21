@@ -181,6 +181,8 @@
     async function sendScreen() {
       const ip = targetIPInput.value.trim();
       if (!ip) { sendStatus.textContent = 'Enter an IP first'; return; }
+      // Pause OCR scan like the Pause button
+      if (!rendererPaused) window.api.togglePause();
       sendBtn.classList.add('sending');
       sendBtn.disabled = true;
       sendStatus.textContent = 'Sending...';
@@ -224,7 +226,9 @@
     });
 
     const pauseBtn = document.getElementById('pause-btn');
+    let rendererPaused = false;
     window.api.onPaused((paused) => {
+      rendererPaused = paused;
       pauseBtn.textContent = paused ? 'Resume' : 'Pause';
       pauseBtn.style.background = paused ? 'rgba(239,68,68,0.25)' : '';
       if (paused) {
@@ -250,6 +254,15 @@
       answerEl.innerHTML = '<span class="remote-tag">Claude Vision</span><br>' + text.replace(/\n/g, '<br>');
       dot.className = 'dot ready';
       statusText.textContent = 'Remote analysis received';
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (document.activeElement === targetIPInput) return;
+      const step = 60;
+      if (e.key === 'ArrowDown') { answerEl.scrollTop += step; e.preventDefault(); }
+      else if (e.key === 'ArrowUp') { answerEl.scrollTop -= step; e.preventDefault(); }
+      else if (e.key === 'PageDown') { answerEl.scrollTop += answerEl.clientHeight; e.preventDefault(); }
+      else if (e.key === 'PageUp') { answerEl.scrollTop -= answerEl.clientHeight; e.preventDefault(); }
     });
   </script>
 </body>
