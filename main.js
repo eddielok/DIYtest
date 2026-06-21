@@ -229,7 +229,7 @@ function callDeepSeek(screenText, prompt) {
           const text = parsed.choices?.[0]?.message?.content || "No response";
           resolve(text);
         } catch (e) {
-          reject(e);
+          reject(new Error(`DeepSeek API error: ${data.slice(0, 200)}`));
         }
       });
     });
