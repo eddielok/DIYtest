@@ -30,9 +30,13 @@ function analyzeWithClaude(imagePath) {
   return new Promise((resolve, reject) => {
     const claudeBin = findClaudeBin();
     const prompt =
-      `Read the image file at "${imagePath}" and analyze what is on the screen. ` +
-      `If there are any questions, problems, or test content visible, answer them clearly and concisely. ` +
-      `If it is general content, summarize the key points. Be direct.`;
+      `Read the image file at "${imagePath}". Look at what is on the screen. ` +
+      `If there is a coding challenge, algorithm problem, or programming question: ` +
+      `provide a complete, working code solution with the full implementation. ` +
+      `Include the code in a code block and add a brief explanation of the approach. ` +
+      `If there are multiple parts or examples, solve all of them. ` +
+      `If it is a non-coding question or general content, answer it directly and concisely. ` +
+      `Do NOT restate the question. Get straight to the answer/code.`;
 
     console.log(`Running: ${claudeBin} -p "..." --allowedTools Read`);
 

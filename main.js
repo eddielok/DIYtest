@@ -1,5 +1,3 @@
-require("dotenv").config();
-
 const {
   app,
   BrowserWindow,
@@ -207,7 +205,7 @@ function callDeepSeek(screenText, prompt) {
     const body = JSON.stringify({
       model: "deepseek-chat",
       messages: [{ role: "user", content: prompt + screenText }],
-      max_tokens: 300,
+      max_tokens: 1000,
     });
 
     const options = {
@@ -338,16 +336,28 @@ async function sendScreenToMac(ip) {
   if (!imageData) throw new Error("Failed to capture screen");
 
   const senderIPs = getLocalIPs();
-  const body = JSON.stringify({ image: imageData, timestamp: Date.now(), senderIPs });
+  const body = JSON.stringify({
+    image: imageData,
+    timestamp: Date.now(),
+    senderIPs,
+  });
 
   return new Promise((resolve, reject) => {
     const req = http.request(
-      { hostname: ip, port: 9999, path: "/receive", method: "POST",
-        headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) } },
+      {
+        hostname: ip,
+        port: 9999,
+        path: "/receive",
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Content-Length": Buffer.byteLength(body),
+        },
+      },
       (res) => {
         res.on("data", () => {});
         res.on("end", () => resolve());
-      }
+      },
     );
     req.on("error", reject);
     req.write(body);
@@ -360,7 +370,10 @@ let resultServer = null;
 function startResultServer() {
   if (resultServer) return;
   resultServer = http.createServer((req, res) => {
-    if (req.method !== "POST" || req.url !== "/result") { res.writeHead(404).end(); return; }
+    if (req.method !== "POST" || req.url !== "/result") {
+      res.writeHead(404).end();
+      return;
+    }
     let body = "";
     req.on("data", (c) => (body += c));
     req.on("end", () => {
