@@ -127,6 +127,8 @@
       font-size: 11px;
       line-height: 1.5;
       color: #d4d4e8;
+      -webkit-app-region: no-drag;
+      outline: none;
     }
 
     .content::-webkit-scrollbar { width: 6px; }
@@ -169,7 +171,7 @@
   </div>
   <div id="category-bar" style="display:none; padding: 3px 14px; font-size: 10px; font-weight: 600; color: #6366f1; letter-spacing: 0.4px; border-bottom: 1px solid rgba(255,255,255,0.06);"></div>
 
-  <div class="content" id="answer">
+  <div class="content" id="answer" tabindex="0">
     <span class="placeholder">Scanning screen in a moment...</span>
   </div>
 
@@ -240,6 +242,7 @@
 
     window.api.onAnswer((text) => {
       answerEl.textContent = text;
+      answerEl.focus();
       dot.className = 'dot ready';
       statusText.textContent = 'Ready';
       nextScanAt = Date.now() + 8000;
@@ -254,6 +257,7 @@
       answerEl.innerHTML = '<span class="remote-tag">Claude Vision</span><br>' + text.replace(/\n/g, '<br>');
       dot.className = 'dot ready';
       statusText.textContent = 'Remote analysis received';
+      answerEl.focus();
     });
 
     document.addEventListener('keydown', (e) => {
